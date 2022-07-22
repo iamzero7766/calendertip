@@ -8,6 +8,7 @@
       <tr v-for="item in calenderList" :key="item.key">
         <td v-for="ele in item.children" :key="ele.key">
           <div 
+            @click="showDetailDay(ele)"
             :class="['calender_tip_item', today_set == ele.key ? 'color_back_orange' : 'color_back_white']" 
             v-show="ele.isShow">
             <div :class="['calender_tip_date', ele.isWork ? 'color_normal' : 'color_red', ele.islocal ? '' : 'opticay_calender']">{{ ele.day }}</div>
@@ -43,15 +44,31 @@
     <!-- 月结束 -->
 
     <!-- 日开始 -->
-    <table v-show="type == 1" class="calender_tip_table">
+    <table v-show="type == 1" class="calender_tip_table type_day_style">
       <tr class="header-box" :style="{ height: headerHeight + 'px' }">
         <th width="80px"></th>
-        <th></th>
+        <th>{{ week_title }}</th>
+      </tr>
+      <tr>
+        <td>
+          <div class="content_day_left">全天</div>
+        </td>
+        <td>
+          <div class="content_day_right">
+            <div 
+              class="content_tag" 
+              v-for="item in totalTags" 
+              :style="{ 'background': item.event_color ? item.event_color : '#ff4d4f'}"
+              :key="item.event_id">{{ item.event_tag }}</div>
+          </div>
+        </td>
       </tr>
       <tr v-for="item in calenderDay" :key="item.time">
-        <td>{{ item.time }}</td>
         <td>
-          <div class="calender_week_tip"></div>
+          <div class="content_day_left">{{ item.time_label }}</div>
+        </td>
+        <td>
+          <div class="content_day_right"></div>
         </td>
       </tr>
     </table>
@@ -66,6 +83,7 @@
 export default {
   data() {
     return {
+      type: 0,
       headerList: [
         "星期一",
         "星期二",
@@ -77,11 +95,13 @@ export default {
       ],
       calenderList: [],
       calenderDay: [],
+      totalTags: [],
       today_set: "",
+      week_title: "",
     };
   },
   props: {
-    type: {
+    calender_type: {
       default: 0,
     },
     dataList: {
@@ -108,6 +128,7 @@ export default {
   methods: {
     // 初始化
     setFirstState() {
+      this.type = this.calender_type;
       this.today_set = this.getTodayDate();
       if(this.type == 1) {   // 周
 
@@ -120,6 +141,32 @@ export default {
         this.calenderList = this.setCalenderData(dateList);
         console.log(this.calenderList);
       }
+    },
+
+
+    // 获取日表格
+    showDetailDay(item) {
+      console.log(item);
+      this.type = 1;
+      this.week_title = this.getWeekName(new Date(item.key));
+      var result = [];
+      var event_list = JSON.parse(JSON.stringify(item.eventList));
+      this.totalTags = event_list;
+      event_list.forEach(item => {
+        var list = item.event_time.split(":");
+        item.key = list[0];
+      })
+      for(var i = 1; i <= 24; i++) {
+        var time_label = i > 12 ? `下午${i-12}时` : `上午${i}时`;
+        var children = event_list.filter(x => x.key == i);
+        var arr_item = {
+          time_label: time_label,
+          children: children
+        }
+        result.push(arr_item);
+      }
+      console.log('result', result);
+      this.calenderDay = result;
     },
 
 
@@ -137,6 +184,13 @@ export default {
         });
       }
       return result;
+    },
+
+    // 获取星期名字
+    getWeekName(date) {
+      var week_num = date.getDay();
+      var week_list = ["日", "一", "二", "三", "四", "五", "六"];
+      return `星期${week_list[week_num]}`;
     },
 
 
@@ -256,6 +310,7 @@ export default {
       padding: 3px;
       width: 100%;
       height: 100%;
+      cursor: pointer;
     }
     .calender_tip_date {
       width: 100%;
@@ -310,11 +365,44 @@ export default {
     .opticay_calender {
       opacity: 0.5;
     }
-    .color_normal_opcitay: {
+    .color_normal_opcitay {
       color: rgba(108, 109, 110, 0.5);
     }
     .color_red_opcitay {
       color: rgba(255, 119, 120, 0.5);
+    }
+  }
+  .type_day_style {
+    td {
+      width: 100%;
+      .content_day_left {
+        width: 100%;
+        min-height: 55px;
+        display: flex;
+        box-sizing: border-box;
+        padding: 0 5px;
+        align-items: center;
+        justify-content: end;
+        font-size: 12px;
+        color: #717273;
+      }
+      .content_day_right {
+        width: 100%;
+        min-height: 55px;
+        display: flex;
+        box-sizing: border-box;
+        padding: 0 5px;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: #717273;
+      }
+      .content_tag {
+        padding: 2px 7px;
+        border-radius: 2px;
+        margin: 0 3px;
+        color: #fff;
+      }
     }
   }
 }
